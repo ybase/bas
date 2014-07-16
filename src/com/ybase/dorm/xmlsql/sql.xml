@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqlxml>
+	<sql id="selectBlogAndImage">
+		<op>select</op>
+		db.id
+		<as>id</as>
+		theme
+		<as>theme</as>
+		blogdesc
+		<as>blogdesc</as>
+		db.crdate
+		<as>crdate</as>
+		db.crtime
+		<as>crtime</as>
+		db.yescount
+		<as>yescount</as>
+		crusr
+		<as>crusr</as>
+		usrname
+		<as>usrname</as>
+		imgid
+		<as>imgid</as>
+		di.picpath
+		<as last="true">picpath</as>
+		FROM dr_blog db
+		LEFT JOIN dr_image di ON db.imgid = di.id
+		<where>
+			<and>imgid=?</and>
+		</where>
+	</sql>
+	<sql id="selectBlogAndImageT5">
+		<op>select</op>
+		db.id
+		<as>id</as>
+		theme
+		<as>theme</as>
+		blogdesc
+		<as>blogdesc</as>
+		db.crdate
+		<as>crdate</as>
+		db.crtime
+		<as>crtime</as>
+		db.yescount
+		<as>yescount</as>
+		crusr
+		<as>crusr</as>
+		usrname
+		<as>usrname</as>
+		imgid
+		<as>imgid</as>
+		di.picpath
+		<as  last="true">picpath</as>
+		FROM dr_blog db
+		LEFT JOIN dr_image di ON db.imgid = di.id
+		ORDER BY
+		db.yescount desc,db.crdate desc,db.crtime desc limit 5
+	</sql>
+</sqlxml>
