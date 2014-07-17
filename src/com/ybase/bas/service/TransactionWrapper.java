@@ -9,11 +9,12 @@ import java.sql.Connection;
 import org.apache.log4j.Logger;
 
 import com.ybase.bas.annotation.Service;
+import com.ybase.bas.constants.BasConstants;
 import com.ybase.bas.jdbc.ConnectionManager;
 import com.ybase.bas.util.BasUtil;
 
 public final class TransactionWrapper {
-	private static final String MANGET_IMPL = "Impl";
+	
 	private static final Logger log = Logger.getLogger(TransactionWrapper.class);
 
 	/**
@@ -45,7 +46,7 @@ public final class TransactionWrapper {
 		int count = 0;
 		for (String split : splits) {
 			if (count == splits.length - 1) {
-				split = convertFirstCase(MANGET_IMPL) + "." + split + MANGET_IMPL;
+				split = convertFirstCase(BasConstants.MANGET_IMPL) + "." + split + BasConstants.MANGET_IMPL;
 				implName.append(split);
 			} else {
 				implName.append(split + ".");

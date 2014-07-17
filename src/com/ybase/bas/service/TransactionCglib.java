@@ -11,11 +11,11 @@ import net.sf.cglib.proxy.MethodProxy;
 
 import org.apache.log4j.Logger;
 
+import com.ybase.bas.constants.BasConstants;
 import com.ybase.bas.jdbc.ConnectionManager;
 import com.ybase.bas.util.BasUtil;
 
 public final class TransactionCglib {
-	private static final String MANGET_IMPL = "Impl";
 	private static final Logger log = Logger.getLogger(TransactionCglib.class);
 
 	/**
@@ -25,6 +25,7 @@ public final class TransactionCglib {
 	 * @return
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unchecked")
 	public static Object getInstance(Object delegate) throws Exception {
 		XAWrapperHandler handler = new XAWrapperHandler();
 		Object obj = handler.createProxy(delegate);
@@ -51,7 +52,7 @@ public final class TransactionCglib {
 		int count = 0;
 		for (String split : splits) {
 			if (count == splits.length - 1) {
-				split = convertFirstCase(MANGET_IMPL) + "." + split + MANGET_IMPL;
+				split = convertFirstCase(BasConstants.MANGET_IMPL) + "." + split + BasConstants.MANGET_IMPL;
 				implName.append(split);
 			} else {
 				implName.append(split + ".");

@@ -74,5 +74,6 @@ public class BasConstants {
 	/** XML SQL 模板路径 */
 	public static final String XML_SQL_PATH = "/sql-template.xml";
 	public static final String SCAN_PACKAGE_PATH = "/scan-package.properties";
+	public static final String MANGET_IMPL = "Impl";
 
 }
