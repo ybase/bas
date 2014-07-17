@@ -90,5 +90,16 @@ public class BasErrCode {
 	public static final String E10034 = "10034";
 	/** 操作 - [ResultSet获取记录条数] 失败*/
 	public static final String E10035 = "10035";
+	
+	/** XmlSQL主标识为空 */
+	public static final String E10036 = "10036";
+	/** XmlSQL-SQL标签主标识为空 */
+	public static final String E10037 = "10037";
+	/** XmlSQL主标识[{0}] 不存在 */
+	public static final String E10038 = "10038";
+	/** XmlSQL 操作类型[{0}] 值为空 */
+	public static final String E10039 = "10039";
+	/** XmlSQL-SQL子标签非法 */
+	public static final String E10040 = "10040";
 
 }

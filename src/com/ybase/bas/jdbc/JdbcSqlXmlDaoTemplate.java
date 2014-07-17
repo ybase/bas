@@ -14,7 +14,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.ybase.bas.constants.BasConstants;
+import com.ybase.bas.constants.BasErrCode;
+import com.ybase.bas.exception.BasException;
 import com.ybase.bas.util.BasUtil;
+import com.ybase.bas.util.JdbcUtil;
+import com.ybase.bas.util.MessageUtil;
 import com.ybase.bas.vo.Page;
 
 public class JdbcSqlXmlDaoTemplate {
@@ -29,17 +33,48 @@ public class JdbcSqlXmlDaoTemplate {
 			docBuilder = docBuilderFac.newDocumentBuilder();
 			xmlSql = docBuilder.parse(JdbcSqlXmlDaoTemplate.class.getResourceAsStream(BasConstants.XML_SQL_PATH));
 			root = xmlSql.getDocumentElement();
-			log.info("SQL XML 框架加载成功!");
-			// TODO 检查sqlxml 合法性
+			log.info(MessageUtil.getBasText("jdbc-xmlsql-loadsucc"));
 		} catch (Exception e) {
-			log.info("SQL XML 框架加载失败!");
+			log.info(MessageUtil.getBasText("jdbc-xmlsql-loadfail"));
 			log.error(e.getMessage(), e);
 		}
 	}
 
-	public static Object[] getXmlSqlById(String id) throws Exception {
+	/**
+	 * 根据XmlSQL主标识|分页对象，获取SQL语句和查询字段列表<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param id
+	 *            主标识<br/>
+	 * @param page
+	 *            分页对象<br/>
+	 * @return
+	 * @throws BasException
+	 */
+	public static Object[] getXmlSqlById(String id, Page page) throws BasException {
+		Object[] rst = getXmlSqlById(id);
+		if (rst.length > 0) {
+			if (page != null) {
+				rst[0] = JdbcUtil.appendPageSub((String) rst[0], page);
+			}
+			return rst;
+		} else {
+			throw new BasException("获取sql xml 失败");
+		}
+	}
+
+	/**
+	 * 根据XmlSQL主标识，获取SQL语句和查询字段列表<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param id
+	 *            XmlSQL主标识<br/>
+	 * @return
+	 * @throws BasException
+	 */
+	public static Object[] getXmlSqlById(String id) throws BasException {
 		if (BasUtil.isNullOrEmpty(id)) {
-			throw new Exception("Sql Xml id 为空");
+			throw new BasException(BasErrCode.E10036);
 		}
 
 		NodeList sqls = root.getElementsByTagName(BasConstants.XML_NODE_SQL);
@@ -55,25 +90,22 @@ public class JdbcSqlXmlDaoTemplate {
 					}
 				}
 			} else {
-				throw new Exception("Sql 标签不合法");
+				throw new BasException(BasErrCode.E10037);
 			}
 		}
-		throw new Exception("Sql Xml 中找不指定id的服务");
+		throw new BasException(BasErrCode.E10038, id);
 	}
 
-	public static Object[] getXmlSqlById(String id, Page page) throws Exception {
-		Object[] rst = getXmlSqlById(id);
-		if (rst.length > 0) {
-			if (page != null) {
-				rst[0] = BasUtil.appendPage((String) rst[0], page);
-			}
-			return rst;
-		} else {
-			throw new Exception("获取sql xml 失败");
-		}
-	}
-
-	private static Object[] dealSqlSyntax(NodeList childs) throws Exception {
+	/**
+	 * 解析指定SQL标签为SQL语句和获取查询字段列表<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param childs
+	 *            SQL节点下子节点<br/>
+	 * @return
+	 * @throws BasException
+	 */
+	private static Object[] dealSqlSyntax(NodeList childs) throws BasException {
 		StringBuffer sql = new StringBuffer();
 		Vector<String> columns = new Vector<String>();
 		for (int i = 0; i < childs.getLength(); i++) {
@@ -88,12 +120,12 @@ public class JdbcSqlXmlDaoTemplate {
 			} else {
 				if (BasConstants.XML_NODE_OP.equals(nodeName)) {
 					if (BasUtil.isNullOrEmpty(node.getTextContent())) {
-						throw new Exception("SQL op 类型错误");
+						throw new BasException(BasErrCode.E10039, BasConstants.XML_NODE_OP);
 					}
 					sql.append(" ").append(node.getTextContent());
 				} else if (BasConstants.XML_NODE_AS.equals(nodeName)) {
 					if (BasUtil.isNullOrEmpty(node.getTextContent())) {
-						throw new Exception("SQL as 类型错误");
+						throw new BasException(BasErrCode.E10039, BasConstants.XML_NODE_AS);
 					}
 
 					columns.add(BasUtil.trim(node.getTextContent()));
@@ -107,17 +139,27 @@ public class JdbcSqlXmlDaoTemplate {
 					sql.append(" ").append(BasConstants.XML_NODE_WHERE);
 					apendSqlCon(sql, node);
 				} else {
-					throw new Exception("SQL XML非法标签");
+					throw new BasException(BasErrCode.E10040);
 				}
 			}
 		}
 
-		log.info("SQL XML 框架sql 语句:" + sql.toString());
-		log.info("SQL XML 框架sql 列:" + columns.toArray().toString());
+		log.debug(MessageUtil.getBasText("jdbc-xmlsql-sqlstr", sql.toString()));
+		log.debug(MessageUtil.getBasText("jdbc-xmlsql-colstr", columns.toArray().toString()));
 		return new Object[] { sql.toString(), columns };
 	}
 
-	private static void apendSqlCon(StringBuffer sql, Node parent) throws Exception {
+	/**
+	 * 前置SQL语句追加Where子句<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param sql
+	 *            前置SQL<br/>
+	 * @param parent
+	 *            where节点<br/>
+	 * @throws BasException
+	 */
+	private static void apendSqlCon(StringBuffer sql, Node parent) throws BasException {
 		NodeList nodes = parent.getChildNodes();
 		int count = 0;
 		for (int i = 0; i < nodes.getLength(); i++) {
@@ -125,7 +167,7 @@ public class JdbcSqlXmlDaoTemplate {
 			String nodeName = node.getNodeName().trim();
 			if (BasConstants.XML_NODE_AND.equals(nodeName)) {
 				if (BasUtil.isNullOrEmpty(node.getTextContent())) {
-					throw new Exception("SQL and 类型错误");
+					throw new BasException(BasErrCode.E10039, BasConstants.XML_NODE_AND);
 				}
 
 				if (count != 0) {
@@ -135,7 +177,7 @@ public class JdbcSqlXmlDaoTemplate {
 				count++;
 			} else if (BasConstants.XML_NODE_OR.equals(nodeName)) {
 				if (BasUtil.isNullOrEmpty(node.getTextContent())) {
-					throw new Exception("SQL or 类型错误");
+					throw new BasException(BasErrCode.E10039, BasConstants.XML_NODE_OR);
 				}
 
 				if (count != 0) {
@@ -145,14 +187,6 @@ public class JdbcSqlXmlDaoTemplate {
 				count++;
 			}
 		}
-	}
-
-	public static void main(String args[]) throws Exception {
-		Page page = new Page();
-		page.setCurrent(1);
-		page.setTotalRecord(22);
-		Object[] rst = JdbcSqlXmlDaoTemplate.getXmlSqlById("selectBlogPage", page);
-		System.out.println(rst[0] + " --> " + rst[1]);
 	}
 
 }
