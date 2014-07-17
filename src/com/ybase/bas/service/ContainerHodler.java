@@ -10,9 +10,16 @@ import org.apache.log4j.Logger;
 import com.ybase.bas.annotation.Component;
 import com.ybase.bas.constants.BasConstants;
 import com.ybase.bas.jdbc.JdbcEntityDaoTemplate;
+import com.ybase.bas.util.MessageUtil;
 
+/**
+ * 容器句柄<br/>
+ *
+ * @bas_V1.0, yangxb, 2014-7-16<br/>
+ */
 public class ContainerHodler {
 	private static final Logger log = Logger.getLogger(ContainerHodler.class.getName());
+	/** dao缓存 */
 	private static Hashtable<String, Object> daoCache = new Hashtable<String, Object>();
 
 	static {
@@ -43,11 +50,19 @@ public class ContainerHodler {
 				}
 			}
 		} catch (Exception e) {
-			log.info("Service Container Init fail!");
+			log.info(MessageUtil.getBasText("service-container-initfail"));
 			log.error(e.getMessage(), e);
 		}
 	}
 
+	/**
+	 * 根据组件名称获取Component组件实例<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param compName
+	 *            组件名称<br/>
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T getComponent(String compName) {
 		return (T) daoCache.get(compName);

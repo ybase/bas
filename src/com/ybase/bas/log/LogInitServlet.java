@@ -32,8 +32,9 @@ public class LogInitServlet extends HttpServlet {
 		String file = this.getServletContext().getRealPath("/") + fileName;
 
 		if (fileName != null) {
-			System.out.println("Log4j开始启动 : ----------------");
+			System.out.println("Log4j开始启动 ");
 			PropertyConfigurator.configure(file);
+			System.out.println("Log4j启动成功 ");
 		} else {
 			System.out.println("Log4j启动失败!");
 		}

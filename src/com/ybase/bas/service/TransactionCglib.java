@@ -15,16 +15,14 @@ import com.ybase.bas.constants.BasConstants;
 import com.ybase.bas.jdbc.ConnectionManager;
 import com.ybase.bas.util.BasUtil;
 
+/**
+ * Cglib事物代理类<br/>
+ *
+ * @bas_V1.0, yangxb, 2014-7-16<br/>
+ */
 public final class TransactionCglib {
 	private static final Logger log = Logger.getLogger(TransactionCglib.class);
 
-	/**
-	 * 创建代理对象
-	 * 
-	 * @param target
-	 * @return
-	 * @throws Exception
-	 */
 	@SuppressWarnings("unchecked")
 	public static Object getInstance(Object delegate) throws Exception {
 		XAWrapperHandler handler = new XAWrapperHandler();
@@ -71,7 +69,6 @@ public final class TransactionCglib {
 		return rst.toString();
 	}
 
-	// 动态代理技术
 	static final class XAWrapperHandler implements MethodInterceptor {
 
 		private Object delegate;

@@ -13,6 +13,11 @@ import com.ybase.bas.constants.BasConstants;
 import com.ybase.bas.jdbc.ConnectionManager;
 import com.ybase.bas.util.BasUtil;
 
+/**
+ * Jdk事物代理类<br/>
+ *
+ * @bas_V1.0, yangxb, 2014-7-16<br/>
+ */
 public final class TransactionWrapper {
 	
 	private static final Logger log = Logger.getLogger(TransactionWrapper.class);
