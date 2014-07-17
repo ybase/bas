@@ -7,7 +7,7 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
-import com.ybase.bas.annotation.Service;
+import com.ybase.bas.annotation.Component;
 import com.ybase.bas.constants.BasConstants;
 import com.ybase.bas.jdbc.JdbcEntityDaoTemplate;
 
@@ -16,7 +16,7 @@ public class ContainerHodler {
 	private static Hashtable<String, Object> daoCache = new Hashtable<String, Object>();
 
 	static {
-		InputStream is = ContainerHodler.class.getResourceAsStream(BasConstants.SCAN_PACKAGE_PATH);
+		InputStream is = ContainerHodler.class.getClassLoader().getResourceAsStream(BasConstants.SCAN_PACKAGE_PATH);
 		Properties prop = new Properties();
 		try {
 			prop.load(is);
@@ -28,8 +28,8 @@ public class ContainerHodler {
 				Class<Package> pkg = (Class<Package>) Class.forName(value);
 				Class<?>[] clzs = pkg.getClasses();
 				for (Class<?> clz : clzs) {
-					if (clz.isAnnotationPresent(Service.class)) {
-						Service anot = clz.getAnnotation(Service.class);
+					if (clz.isAnnotationPresent(Component.class)) {
+						Component anot = clz.getAnnotation(Component.class);
 						Class<?>[] interfs = clz.getInterfaces();
 						for (int i = 0; i < interfs.length; i++) {
 							Class<?> interf = interfs[i];

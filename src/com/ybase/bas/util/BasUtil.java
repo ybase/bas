@@ -7,17 +7,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Blob;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -25,12 +19,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-
-import com.ybase.bas.BasException;
-import com.ybase.bas.annotation.Column;
-import com.ybase.bas.vo.BasVO;
-import com.ybase.bas.vo.Page;
-import com.ybase.dorm.bas.DormConstant;
 
 /**
  * bas 工具类<br/>
@@ -64,124 +52,6 @@ public class BasUtil {
 		return null;
 	}
 
-	public static Integer countRs(ResultSet rs) throws SQLException {
-		Integer count = 0;
-		if (rs != null) {
-			while (rs.next()) {
-				count = rs.getInt("num");
-			}
-		}
-		return count;
-	}
-
-	public static <T> List<T> resultSet2VoProp(ResultSet rs, Class<T> clz) throws Exception {
-		List<T> list = new ArrayList<T>();
-		if (rs != null && clz != null) {
-			try {
-				if (BasVO.class.getName().equals(clz.getSuperclass().getName())) {
-					while (rs.next()) {
-						T vo = clz.newInstance();
-						Field[] fields = clz.getDeclaredFields();
-						for (Field f : fields) {
-							if (f.isAnnotationPresent(Column.class)) {
-								Column colAn = f.getAnnotation(Column.class);
-								String setterMethodName = getSetterMethodName(f.getName());
-								Object invokeParamVal = rs.getClass().getMethod(getGetterMethodName(colAn.type()), String.class).invoke(rs, colAn.name());
-								if ("blob".equals(colAn.type())) {
-									clz.getMethod(setterMethodName, f.getType()).invoke(vo, convertBlobToString((Blob) invokeParamVal));
-								} else {
-									clz.getMethod(setterMethodName, f.getType()).invoke(vo, invokeParamVal);
-								}
-							} else if (Modifier.isFinal(f.getModifiers()) || Modifier.isStatic(f.getModifiers())) {
-								log.debug(String.format("VO Field[%s] 字段为static 或 final 修饰符所修饰，将被忽略", f.getName()));
-							} else {
-								log.error(String.format("VO Field[%s] 找不到对应column 注解", f.getName()));
-								throw new BasException(String.format("VO Field[%s] 找不到对应column 注解", f.getName()));
-							}
-						}
-						list.add(vo);
-					}
-				} else {
-					log.error("VO 类型错误!");
-					throw new BasException("VO 类型错误!");
-				}
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
-				throw new BasException(e.getMessage());
-			}
-		}
-
-		if (!isNullOrEmpty(list)) {
-			return list;
-		}
-
-		return null;
-	}
-
-	public static <T> List<Object> resultSet2ColProp(ResultSet rs, Class<T> clz, String loadCol) throws Exception {
-		List<Object> list = new ArrayList<Object>();
-		if (rs != null && clz != null) {
-			try {
-				if (BasVO.class.getName().equals(clz.getSuperclass().getName())) {
-					while (rs.next()) {
-						Field[] fields = clz.getDeclaredFields();
-						for (Field f : fields) {
-							if (f.isAnnotationPresent(Column.class)) {
-								if (f.getName().equals(loadCol)) {
-									Column colAn = f.getAnnotation(Column.class);
-									Object invokeParamVal = rs.getClass().getMethod(getGetterMethodName(colAn.type()), String.class).invoke(rs, colAn.name());
-									if ("blob".equals(colAn.type())) {
-										invokeParamVal = convertBlobToString((Blob) invokeParamVal);
-									}
-									list.add(invokeParamVal);
-								}
-							} else if (Modifier.isFinal(f.getModifiers()) || Modifier.isStatic(f.getModifiers())) {
-								log.debug(String.format("VO Field[%s] 字段为static 或 final 修饰符所修饰，将被忽略", f.getName()));
-							} else {
-								log.error(String.format("VO Field[%s] 找不到对应column 注解", f.getName()));
-								throw new BasException(String.format("VO Field[%s] 找不到对应column 注解", f.getName()));
-							}
-						}
-					}
-				} else {
-					log.error("VO 类型错误!");
-					throw new BasException("VO 类型错误!");
-				}
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
-				throw new BasException(e.getMessage());
-			}
-		}
-
-		if (!isNullOrEmpty(list)) {
-			return list;
-		}
-
-		return null;
-	}
-
-	public static String getSetterMethodName(String fieldName) {
-		if (!isNullOrEmpty(fieldName)) {
-			fieldName = fieldName.trim();
-			StringBuffer tmp = new StringBuffer("set");
-			tmp.append(fieldName.substring(0, 1).toUpperCase());
-			tmp.append(fieldName.substring(1));
-			return tmp.toString();
-		}
-		return null;
-	}
-
-	public static String getGetterMethodName(String fieldName) {
-		if (!isNullOrEmpty(fieldName)) {
-			fieldName = fieldName.trim();
-			StringBuffer tmp = new StringBuffer("get");
-			tmp.append(fieldName.substring(0, 1).toUpperCase());
-			tmp.append(fieldName.substring(1));
-			return tmp.toString();
-		}
-		return null;
-	}
-
 	public static String getDate8Str() {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 		return sdf.format(new Date());
@@ -192,10 +62,13 @@ public class BasUtil {
 		return sdf.format(new Date());
 	}
 
-	/*
-	 * 将BLOB 转出 String<br/>
+	/**
+	 * 将Blob对象转换成字符串<br/>
 	 * 
-	 * @DORMITORY_V1.0, yangxb, 2014年5月24日
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param blob
+	 *            Blob对象<br/>
+	 * @return
 	 */
 	public static String convertBlobToString(Blob blob) {
 		String result = "";
@@ -211,62 +84,14 @@ public class BasUtil {
 		return result;
 	}
 
-	public static String appendPage(StringBuffer sql, Page page) {
-		String tmpSql = null;
-		if (sql != null && page != null) {
-			tmpSql = sql.toString();
-		}
-		return appendPage(tmpSql, page);
-	}
-
-	public static String appendPage(String sql, Page page) {
-		StringBuffer tmp = new StringBuffer();
-		if (sql != null && page != null) {
-			tmp.append(sql.trim().toLowerCase());
-			int subLen = page.getLastRecord() - page.getFirstRecord() + 1;
-			tmp.append(" limit ").append(page.getFirstRecord()).append(", ").append(subLen);
-			return tmp.toString();
-		} else {
-			return sql;
-		}
-	}
-
-	public static String[] getColumnName(String sql) {
-		if (isNullOrEmpty(sql)) {
-			return null;
-		}
-
-		sql = sql.trim();
-		int last = sql.indexOf("from");
-		sql = sql.substring(4, last).trim();
-		String[] cols = sql.split(",");
-		String[] rsSql = new String[cols.length];
-		int i = 0;
-		for (String col : cols) {
-			col = col.trim();
-			if (col.indexOf(".") != -1) {
-				rsSql[i] = col.split(" ")[1];
-			} else {
-				rsSql[i] = col;
-			}
-			i++;
-		}
-		return rsSql;
-	}
-
-	public static String isoToG180(String str) {
-		if (!isNullOrEmpty(str)) {
-			try {
-				return new String(str.getBytes("ISO8859_1"), "GB18030");
-			} catch (UnsupportedEncodingException e) {
-				System.out.println("DormUtil.isoToGb 转码失败！");
-			}
-		}
-		return str;
-	}
-
 	/**
-	 * 使用文件通道的方式复制文件
+	 * 文件拷贝<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param s
+	 *            原文件<br/>
+	 * @param t
+	 *            目标文件<br/>
 	 */
 	public static void fileChannelCopy(File s, File t) {
 		FileInputStream fi = null;
@@ -293,22 +118,29 @@ public class BasUtil {
 		}
 	}
 
+	/**
+	 * 获取max-min中的自然数<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param max
+	 *            最大数<br/>
+	 * @param min
+	 *            最小数<br/>
+	 * @return
+	 */
 	public static int randomOne(int max, int min) {
 		Random random = new Random();
 		return random.nextInt(max) % (max - min + 1) + min;
 	}
 
-	public static boolean checkDrRecordTp(Integer type) {
-		if (type == null) {
-			return false;
-		} else if (type == Integer.valueOf(DormConstant.DR_RECORD_TYPE_0) || type == Integer.valueOf(DormConstant.DR_RECORD_TYPE_1) || type == Integer.valueOf(DormConstant.DR_RECORD_TYPE_2)
-				|| type == Integer.valueOf(DormConstant.DR_RECORD_TYPE_3)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
+	/**
+	 * 用空格代替字串中的连续存在换行符、制表符<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param str
+	 *            字串<br/>
+	 * @return
+	 */
 	public static String replaceBlank(String str) {
 		String dest = "";
 		if (str != null) {
@@ -319,12 +151,48 @@ public class BasUtil {
 		return dest;
 	}
 
+	/**
+	 * trim字串两端空格符<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param str
+	 * @return
+	 */
 	public static String trim(String str) {
 		if (!isNullOrEmpty(str)) {
 			return replaceBlank(str).trim();
 		} else {
 			return "";
 		}
+	}
+
+	/**
+	 * 将byte数组转换成自定字符编码字串<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param in
+	 *            字节数组<br/>
+	 * @parma encoding 字符编码<br/>
+	 * @return
+	 * @throws Exception
+	 */
+	public static String byteTOString(byte[] in, String encoding) throws Exception {
+		InputStream is = byteTOInputStream(in);
+		return InputStreamTOString(is, encoding);
+	}
+
+	/**
+	 * 将byte数组转换成字串<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param in
+	 *            字节数组<br/>
+	 * @return
+	 * @throws Exception
+	 */
+	public static String byteTOString(byte[] in) throws Exception {
+		InputStream is = byteTOInputStream(in);
+		return InputStreamTOString(is, "UTF-8");
 	}
 
 	public static InputStream byteTOInputStream(byte[] in) throws Exception {
@@ -343,16 +211,12 @@ public class BasUtil {
 		return new String(outStream.toByteArray(), encoding);
 	}
 
-	public static String byteTOString(byte[] in) throws Exception {
-		InputStream is = byteTOInputStream(in);
-		return InputStreamTOString(is, "GB18030");// TODO
-	}
-
 	/**
 	 * MD5 加密<br/>
 	 * 
 	 * @bas_V1.0, yangxb, 2014-7-16<br/>
 	 * @param inStr
+	 *            待加密字串<br/>
 	 * @return
 	 */
 	public static String md5Encrypt(String inStr) {

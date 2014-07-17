@@ -10,8 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.ybase.bas.constants.BasConstants;
-import com.ybase.bas.util.BasUtil;
-import com.ybase.dorm.vo.DrUser;
 
 /**
  * bas 请求转发公共抽象基类<br/>
@@ -29,7 +27,7 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 	protected ThreadLocal<HttpSession> wrappSession = new ThreadLocal<HttpSession>();
 	/** PrintWriter Wrapper */
 	protected ThreadLocal<PrintWriter> wrappOut = new ThreadLocal<PrintWriter>();
-	
+
 	protected abstract void wrappRequest() throws Exception;
 
 	@Override
@@ -57,33 +55,25 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 		}
 	}
 
-	protected String getLoginUsr() {
-		if (wrappReq.get() != null) {
-			HttpSession session = wrappSession.get();
-			Object obj = session.getAttribute("loginusr");
-			if (obj != null) {
-				DrUser usr = (DrUser) obj;
-				return usr.getName();
-			}
-		}
-		return "";
-	}
-
-	protected DrUser getLoginUsrObj() {
-		if (wrappReq.get() != null) {
-			HttpSession session = wrappSession.get();
-			Object obj = session.getAttribute("loginusr");
-			if (obj != null) {
-				return (DrUser) obj;
-			}
-		}
-		return null;
-	}
-
+	/**
+	 * 获取表单数据<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param attr
+	 * @return
+	 */
 	protected String getPar(String attr) {
 		return wrappReq.get().getParameter(attr);
 	}
 
+	/**
+	 * 获取Request,Session,Application属性值<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param scope
+	 * @param attr
+	 * @return
+	 */
 	protected Object getAttr(int scope, String attr) {
 		switch (scope) {
 		case BasConstants.SCOPE_REQ:
@@ -99,6 +89,14 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 		}
 	}
 
+	/***
+	 * 设置Request,Session,Application属性值<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param scope
+	 * @param attr
+	 * @param value
+	 */
 	protected void setAttr(int scope, String attr, Object value) {
 		switch (scope) {
 		case BasConstants.SCOPE_REQ:
@@ -114,39 +112,26 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 		}
 	}
 
+	/**
+	 * 转发URL<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param url
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	protected void dispatchURL(String url) throws ServletException, IOException {
 		wrappReq.get().getRequestDispatcher(url).forward(wrappReq.get(), wrappResp.get());
 	}
 
+	/**
+	 * 重定向URL<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @param url
+	 * @throws IOException
+	 */
 	protected void redirectURL(String url) throws IOException {
 		wrappResp.get().sendRedirect(url);
-	}
-
-	protected <T> void setCommonVO(T t) {
-		if (t != null) {
-			try {
-				if (t.getClass().getDeclaredField("crTime") != null) {
-					t.getClass().getMethod("setCrTime", String.class).invoke(t, BasUtil.getTime9Str());
-				}
-
-				if (t.getClass().getDeclaredField("crDate") != null) {
-					t.getClass().getMethod("setCrDate", String.class).invoke(t, BasUtil.getDate8Str());
-				}
-
-				DrUser user = getLoginUsrObj();
-				if (user != null) {
-					if (t.getClass().getDeclaredField("crUsr") != null) {
-						t.getClass().getMethod("setCrUsr", Integer.class).invoke(t, user.getId());
-					}
-
-					if (t.getClass().getDeclaredField("usrName") != null) {
-						t.getClass().getMethod("setUsrName", String.class).invoke(t, user.getName());
-					}
-				}
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
-			}
-
-		}
 	}
 }

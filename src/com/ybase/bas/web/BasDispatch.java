@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
  */
 public interface BasDispatch {
 	public static final Logger log = Logger.getLogger(BasDispatch.class);
-	
+
 	/**
 	 * 请求转发实现<br/>
 	 * 

@@ -1,11 +1,9 @@
-package com.ybase.dorm.bas;
+package com.ybase.bas.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import org.apache.log4j.Logger;
-
-import com.ybase.bas.util.BasUtil;
 
 /**
  * 格式化工具<br/>

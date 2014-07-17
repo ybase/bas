@@ -70,10 +70,17 @@ public class BasConstants {
 	public static final String XML_NODE_WHERE = "where";
 	public static final String XML_NODE_AND = "and";
 	public static final String XML_NODE_OR = "or";
-	
+
+	/** Scan Service 后缀 */
+	public static final String MANGET_IMPL = "Impl";
+
 	/** XML SQL 模板路径 */
 	public static final String XML_SQL_PATH = "/sql-template.xml";
 	public static final String SCAN_PACKAGE_PATH = "/scan-package.properties";
-	public static final String MANGET_IMPL = "Impl";
+	public static final String BAS_MESSAGE_URL = "bas-message.properties";
+	public static final String WEB_MESSAGE_URL = "/web-message.properties";
+	public static final String COMMON_MESSAGE_URL = "/common-message.properties";
+	public static final String GETTER_PREFIX = "get";
+	public static final String SETTER_PREFIX = "set";
 
 }
