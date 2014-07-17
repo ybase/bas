@@ -28,6 +28,12 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 	/** PrintWriter Wrapper */
 	protected ThreadLocal<PrintWriter> wrappOut = new ThreadLocal<PrintWriter>();
 
+	/**
+	 * 封装请求处理<br/>
+	 * 
+	 * @bas_V1.0, yangxb, 2014-7-16<br/>
+	 * @throws Exception
+	 */
 	protected abstract void wrappRequest() throws Exception;
 
 	@Override
@@ -38,7 +44,7 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 		try {
 			wrappRequest();
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -51,7 +57,7 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 		try {
 			wrappRequest();
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -78,12 +84,8 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 		switch (scope) {
 		case BasConstants.SCOPE_REQ:
 			return wrappReq.get().getAttribute(attr);
-		case BasConstants.SCOPE_RESP:
-			// return wrappResp.get();
 		case BasConstants.SCOPE_SESSION:
 			return wrappSession.get().getAttribute(attr);
-		case BasConstants.SCOPE_APPL:
-			return wrappReq.get().getAttribute(attr);
 		default:
 			return null;
 		}
@@ -101,11 +103,7 @@ public abstract class AbstractDispatch extends HttpServlet implements BasDispatc
 		switch (scope) {
 		case BasConstants.SCOPE_REQ:
 			wrappReq.get().setAttribute(attr, value);
-		case BasConstants.SCOPE_RESP:
-			// wrappOut.get().print(value);
 		case BasConstants.SCOPE_SESSION:
-			wrappReq.get().setAttribute(attr, value);
-		case BasConstants.SCOPE_APPL:
 			wrappSession.get().setAttribute(attr, value);
 		default:
 			;
