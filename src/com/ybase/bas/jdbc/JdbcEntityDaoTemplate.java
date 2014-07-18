@@ -118,6 +118,7 @@ public abstract class JdbcEntityDaoTemplate {
 		List<T> list = null;
 		try {
 			con = connMgr.getConnection("");
+			log.debug("Thread No[" + Thread.currentThread().getId() + "]," + "SQL Connection[ " + con + " ], Where[executeQuery]");
 			preStmt = con.prepareStatement(JdbcUtil.createSqlByProp(clz, null, props, BasConstants.SQL_SELECT, null, 0, null));
 			JdbcUtil.supplyQuestionMark(clz, preStmt, null, props, BasConstants.SQL_SELECT);
 			result = preStmt.executeQuery();

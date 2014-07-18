@@ -14,6 +14,7 @@ import java.util.Vector;
 import org.apache.log4j.Logger;
 
 import com.mysql.jdbc.Driver;
+import com.ybase.bas.util.MessageUtil;
 
 /**
  * 管理类DBConnectionManager支持对一个或多个由属性文件定义的数据库连接池的访问.<br/>
@@ -36,7 +37,9 @@ public class ConnectionManager {
 	public Hashtable<String, ConnectionPool> pools = new Hashtable<String, ConnectionPool>();
 
 	private ConnectionManager() {
+		log.info(MessageUtil.getBasText("jdbc-manager-initstart"));
 		init();
+		log.info(MessageUtil.getBasText("jdbc-manager-initend"));
 	}
 
 	/**
@@ -47,6 +50,7 @@ public class ConnectionManager {
 	 */
 	static synchronized public ConnectionManager getInstance() {
 		if (instance == null) {
+			log.info(MessageUtil.getBasText("jdbc-manager-instancemanager"));
 			instance = new ConnectionManager();
 		}
 
@@ -67,6 +71,7 @@ public class ConnectionManager {
 			name = this.defaultPoolName;
 		}
 
+		log.info(MessageUtil.getBasText("jdbc-manager-freeconn", con.toString(), name));
 		ConnectionPool pool = (ConnectionPool) pools.get(name);
 		if (pool != null) {
 			pool.freeConnection(con);
@@ -91,7 +96,9 @@ public class ConnectionManager {
 
 		ConnectionPool pool = (ConnectionPool) pools.get(name);
 		if (pool != null) {
-			return pool.returnConnection();
+			Connection conn = pool.returnConnection();
+			log.info(MessageUtil.getBasText("jdbc-manager-getconn", conn.toString(), name));
+			return conn;
 		}
 		return null;
 	}
@@ -113,7 +120,9 @@ public class ConnectionManager {
 
 		ConnectionPool pool = (ConnectionPool) pools.get(name);
 		if (pool != null) {
-			return pool.getConnection(time);
+			Connection conn = pool.getConnection(time);
+			log.info(MessageUtil.getBasText("jdbc-manager-getconn", conn.toString(), name));
+			return conn;
 		}
 		return null;
 	}
@@ -139,9 +148,9 @@ public class ConnectionManager {
 			Driver driver = (Driver) allDrivers.nextElement();
 			try {
 				DriverManager.deregisterDriver(driver);
-				log.info("撤销JDBC驱动程序 " + driver.getClass().getName() + "的注册");
+				log.error(MessageUtil.getBasText("jdbc-manager-driverunregsucc", driver.getClass().getName()));
 			} catch (SQLException e) {
-				log.error("无法撤销下列JDBC驱动程序的注册: " + driver.getClass().getName(), e);
+				log.error(MessageUtil.getBasText("jdbc-manager-driverunregfail", driver.getClass().getName()));
 			}
 		}
 	}
@@ -161,7 +170,7 @@ public class ConnectionManager {
 				String poolName = name.substring(0, name.lastIndexOf("."));
 				String url = props.getProperty(poolName + ".url");
 				if (url == null) {
-					log.error("没有为连接池" + poolName + "指定URL");
+					log.warn(MessageUtil.getBasText("jdbc-conpoll-urlnf", poolName));
 					continue;
 				}
 				String user = props.getProperty(poolName + ".user");
@@ -171,12 +180,12 @@ public class ConnectionManager {
 				try {
 					max = Integer.valueOf(maxconn).intValue();
 				} catch (NumberFormatException e) {
-					log.error("错误的最大连接数限制: " + maxconn + " .连接池: " + poolName);
+					log.error(MessageUtil.getBasText("jdbc-conpoll-maxlimierr", poolName, maxconn));
 					max = 0;
 				}
 				ConnectionPool pool = new ConnectionPool(poolName, url, user, password, max);
 				pools.put(poolName, pool);
-				log.info("成功创建连接池" + poolName);
+				log.info(MessageUtil.getBasText("jdbc-conpoll-createsucc", poolName));
 			} else if (name.endsWith("pool")) {
 				this.defaultPoolName = props.getProperty(name);
 			}
@@ -190,18 +199,19 @@ public class ConnectionManager {
 	 */
 	private void init() {
 		try {
-			InputStream in = this.getClass().getResourceAsStream("db.properties");
+			InputStream in = this.getClass().getResourceAsStream("/db.properties");
 			Properties dbProps = new Properties();
 			try {
 				dbProps.load(in);
 			} catch (Exception e) {
-				log.error("不能读取属性文件. " + "请确保db.properties在CLASSPATH指定的路径中");
+				log.error(MessageUtil.getBasText("jdbc-manager-dbpnf"));
 				return;
 			}
 			loadDrivers(dbProps);
 			createPools(dbProps);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
+			log.error(MessageUtil.getBasText("jdbc-manager-dbinitfail"));
 		}
 	}
 
@@ -221,9 +231,9 @@ public class ConnectionManager {
 				Driver driver = (Driver) Class.forName(driverClassName).newInstance();
 				DriverManager.registerDriver(driver);
 				drivers.addElement(driver);
-				log.info("成功注册JDBC驱动程序" + driverClassName);
+				log.info(MessageUtil.getBasText("jdbc-manager-driverregsucc", driverClassName));
 			} catch (Exception e) {
-				log.error("无法注册JDBC驱动程序: " + driverClassName, e);
+				log.info(MessageUtil.getBasText("jdbc-manager-driverregfail", driverClassName));
 			}
 		}
 	}
@@ -311,18 +321,19 @@ public class ConnectionManager {
 					freeConnections.removeElementAt(0);
 					try {
 						if (con.isClosed()) {
-							log.info("从连接池" + name + "删除一个无效连接");
+							log.info(MessageUtil.getBasText("jdbc-conpoll-ivconndelsucc", name));
 							// 递归调用自己,尝试再次获取可用连接
 							con = getConnection();
 						}
 					} catch (SQLException e) {
-						log.info("从连接池" + name + "删除一个无效连接时错误");
+						log.info(MessageUtil.getBasText("jdbc-conpoll-ivconndelfail", name));
+						log.error(e.getMessage(), e);
 						// 递归调用自己,尝试再次获取可用连接
 						con = getConnection();
 					}
 
 					if (freeConnections.size() > maxConn) {
-						log.info("删除一个溢出连接 ");
+						log.info(MessageUtil.getBasText("jdbc-conpoll-connout", name));
 						releaseOne();
 					}
 				} else if ((maxConn == 0) || (freeConnections.size() < maxConn)) {
@@ -342,16 +353,17 @@ public class ConnectionManager {
 				} else if (freeConnections.size() + clients >= maxConn) {
 					// 如果闲置大于最大连接，返回一个可用的旧连接
 					con = (Connection) freeConnections.firstElement();
-					log.info(" [a 连接池可用连接数 ] : " + "[ " + freeConnections.size() + " ]");
+					log.info(MessageUtil.getBasText("jdbc-conpoll-validconnsize", name,freeConnections.size()));
 					freeConnections.removeElementAt(0);
-					log.info(" [b 连接池可用连接数 ] : " + "[ " + freeConnections.size() + " ]");
+					log.info(MessageUtil.getBasText("jdbc-conpoll-validconnsize", name,freeConnections.size()));
 					try {
 						if (con.isClosed()) {
-							log.info("从连接池" + name + "删除一个无效连接");
+							log.info(MessageUtil.getBasText("jdbc-conpoll-ivconndelsucc", name));
 							returnConnection();
 						}
 					} catch (SQLException e) {
-						log.info("从连接池" + name + "删除一个无效连接时错误");
+						log.info(MessageUtil.getBasText("jdbc-conpoll-ivconndelfail", name));
+						log.error(e.getMessage(),e);
 						returnConnection();
 					}
 				}
@@ -399,9 +411,10 @@ public class ConnectionManager {
 						connectionHandler.remove();
 					}
 					con.close();
-					log.info("关闭连接池" + name + "中的一个连接");
+					log.info(MessageUtil.getBasText("jdbc-conpoll-connclosesucc", name, con));
 				} catch (SQLException e) {
-					log.error("无法关闭连接池" + name + "中的连接", e);
+					log.info(MessageUtil.getBasText("jdbc-conpoll-connclosefail", name, con));
+					log.error(e.getMessage(), e);
 				}
 			}
 			freeConnections.removeAllElements();
@@ -419,14 +432,15 @@ public class ConnectionManager {
 					if (con == connectionHandler.get()) {
 						connectionHandler.remove();
 					}
+					log.info(MessageUtil.getBasText("jdbc-conpoll-connclosesucc", name, con));
 					con.close();
-					log.info("关闭连接池" + name + "中的一个连接");
 					freeConnections.remove(con);
 				} catch (SQLException e) {
-					log.error("无法关闭连接池" + name + "中的连接", e);
+					log.info(MessageUtil.getBasText("jdbc-conpoll-connclosefail", name, con));
+					log.error(e.getMessage(), e);
 				}
 			} else {
-				log.info("连接池中，无可用连接!");
+				log.info(MessageUtil.getBasText("jdbc-conpoll-connf", name));
 			}
 		}
 
@@ -444,9 +458,10 @@ public class ConnectionManager {
 				} else {
 					con = DriverManager.getConnection(URL, user, password);
 				}
-				log.info("连接池" + name + "创建一个新的连接");
+				log.info(MessageUtil.getBasText("jdbc-conpoll-crconnsucc", name));
 			} catch (SQLException e) {
-				log.error("无法创建下列URL的连接: " + URL, e);
+				log.info(MessageUtil.getBasText("jdbc-conpoll-crconnfail", name));
+				log.error(e.getMessage(), e);
 				return null;
 			}
 			return con;

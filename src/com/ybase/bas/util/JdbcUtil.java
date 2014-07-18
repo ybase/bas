@@ -386,7 +386,7 @@ public class JdbcUtil {
 			}
 			count++;
 		}
-		throw new BasException(BasErrCode.E10026, operType);
+		throw new BasException(BasErrCode.E10041);
 	}
 
 	/**
@@ -622,7 +622,11 @@ public class JdbcUtil {
 	 */
 	public static <T> List<T> resultSet2VoProp(ResultSet rs, Class<T> clz) throws BasException {
 		List<T> list = new ArrayList<T>();
-		if (rs != null && clz != null) {
+		if (rs == null) {
+			return list;
+		}
+
+		if (clz != null) {
 			try {
 				if (BasVO.class.getName().equals(clz.getSuperclass().getName())) {
 					while (rs.next()) {

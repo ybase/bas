@@ -101,5 +101,8 @@ public class BasErrCode {
 	public static final String E10039 = "10039";
 	/** XmlSQL-SQL子标签非法 */
 	public static final String E10040 = "10040";
+	
+	/** 条件逻辑判断符不在支持范围(= <> > <等) */
+	public static final String E10041 = "10041";
 
 }

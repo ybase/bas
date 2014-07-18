@@ -15,14 +15,13 @@ import com.ybase.bas.constants.BasConstants;
  * @bas_V1.0, yangxb, 2014-7-16<br/>
  */
 public class MessageUtil {
-
 	private static final Logger log = Logger.getLogger(MessageUtil.class.getName());
 	private static Properties commProp = new Properties();
 	private static Properties webProp = new Properties();
 	private static Properties basProp = new Properties();
 
-	static {
-		System.out.println("Load Message Start.");
+	public static void init() {
+		log.info(("Load Message Component Start..."));
 		InputStream is1 = MessageUtil.class.getResourceAsStream(BasConstants.BAS_MESSAGE_URL);
 		InputStream is2 = MessageUtil.class.getClassLoader().getResourceAsStream(BasConstants.WEB_MESSAGE_URL);
 		InputStream is3 = MessageUtil.class.getClassLoader().getResourceAsStream(BasConstants.COMMON_MESSAGE_URL);
@@ -43,6 +42,8 @@ public class MessageUtil {
 		} catch (Throwable e) {
 			log.info("Message[web] propertie file is not load.");
 		}
+		
+		log.info(("Load Message Component success..."));
 
 	}
 
